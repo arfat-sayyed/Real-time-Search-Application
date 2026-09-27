@@ -117,8 +117,8 @@ def add_front_matter(doc):
         'Declaration', 'List of Tables', 'List of Figures', 'Chapter 1 Introduction to the Topic',
         'Chapter 2 Review of Literature', 'Chapter 3 Research Objectives and Methodology',
         'Chapter 4 Data Analysis and Results', 'Chapter 5 Findings and Conclusion',
-        'Chapter 6 Recommendations and Limitations of the Study', 'Chapter 7 Bibliography and References',
-        'Appendix A System Design and API', 'Appendix B Testing Evidence', 'Screenshot Appendix'
+        'Chapter 6 Recommendations and Limitations of the Study', 'Chapter 7 Bibliography',
+        'Chapter 8 Appendix', 'Appendix A System Design and API', 'Appendix B Testing Evidence', 'Screenshot Appendix'
     ]:
         doc.add_paragraph(item)
     doc.add_paragraph('Update page numbers in Word after you finish adding screenshots.')
@@ -151,6 +151,7 @@ def add_markdown_content(doc):
     lines = SOURCE.read_text().splitlines()
     i = 0
     in_body = False
+    chapter_count = 0
     while i < len(lines):
         line = lines[i].strip()
         if line == '# Chapter 1 Introduction to the Topic':
@@ -164,6 +165,10 @@ def add_markdown_content(doc):
             text = line[2:]
             if text.startswith('Developing a Real'):
                 i += 1; continue
+            if text.startswith('Chapter '):
+                chapter_count += 1
+                if chapter_count > 1:
+                    doc.add_page_break()
             p = doc.add_paragraph(); p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             r = p.add_run(text.upper()); r.bold = True; r.font.size = Pt(14)
             i += 1; continue
@@ -195,7 +200,9 @@ def add_markdown_content(doc):
         if line.startswith('- '):
             p = doc.add_paragraph(style='List Bullet'); p.add_run(line[2:]); i += 1; continue
         if line[:2].isdigit() and '. ' in line[:5]:
-            p = doc.add_paragraph(style='List Number'); p.add_run(line.split('. ', 1)[1]); i += 1; continue
+            # Keep the source number as text so two-digit lists (10–12) do not
+            # restart as 1–3 when the document is opened or rendered.
+            p = doc.add_paragraph(); p.add_run(line); i += 1; continue
         p = doc.add_paragraph()
         p.add_run(line.replace('**', '').replace('*', '').replace('`', ''))
         i += 1
